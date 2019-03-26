@@ -1,12 +1,12 @@
 <template>
     <div class="editor">
         <h1>エディター画面</h1>
-        <span>{{user.displayName}}</span>
+        <span>{{ user.displayName }}</span>
         <button @click="logout">ログアウト</button>
-        <div>
+        <div class="editorWrapper">
             <div class="memoListWrapper">
-                <div class="memoList" v-for="(memo, index) in memos" @click="selectMemo(index)" :key="index == selectedIndex">
-                <p class="memoTitle">{{ displayTitle(memo.markdown)}}</p>   
+                <div class="memoList" v-for="(memo, index) in memos" :key="index" @click="selectMemo(index)" :data-selected="index == selectedIndex">
+                <p class="memoTitle">{{ displayTitle(memo.markdown) }}</p>   
                 </div>
                 <button class="addMemoBtn" @click="addMemo">メモの追加</button>
                 <button class="deleteMemoBtn" v-if="memos.length > 1" @click="deleteMemo">選択中のメモの削除</button>
@@ -23,10 +23,10 @@ import marked from 'marked';
 export default {
     name:"editor",
     props:["user"],
-    data(){
-        return{
+    data() {
+        return {
             memos: [{
-                markdown: ""
+                markdown: ''
             }],
             selectedIndex: 0
         };
@@ -37,10 +37,21 @@ export default {
             .ref('memos/' + this.user.uid)
             .once('value')
             .then(result => {
-                if(reslut.val()) {
+                if(result.val()) {
                     this.memos = result.val();
                 }
             })
+    },
+    mounted: function() {
+        document.onkeydown = e => {
+            if(e.key == 's' && (e.mataKey || e.ctrlKey)){
+                this.saveMemos();
+                return false;
+            }
+        }
+    },
+    beforeDestroy: function() {
+        document.onkeydown = null;
     },
     methods: {
         logout: function(){
@@ -70,16 +81,18 @@ export default {
             firebase
                 .database()
                 .ref('memos/' + this.user.uid)
-                .set(this.memo);
+                .set(this.memos);
         }
     }
 };
 </script>
 <style lang="scss" scoped>
+.editorWrapper {
+    display: flex;
+}
 .memoListWrapper {
- width: 19%; 
- float: left;
- border-top: 1px  
+ width: 20%; 
+ border-top: 1px solid #000;  
 }
 .memoList {
     padding: 100px;
@@ -105,12 +118,10 @@ export default {
     margin: 10px;
 }
 .markdown {
-    float: left;
     width: 40%;
     height: 500px;
 }
 .preview {
-    float: left;
     width: 40%;
     text-align: left;
 }
